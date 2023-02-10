@@ -9,7 +9,7 @@ This is a tool to help you find out who unfollowed you on GitHub.
 1. Create a [personal access token](https://github.com/settings/personal-access-tokens/new) with `Followers - Read
    only` and `Gists - Read and write` permission.
 2. Create a [GitHub Gist](https://gist.github.com/), and save the Gist ID in the last part of the URL.
-3. Fork this repository, set `GH_TOkEN` and `GIST_ID` secrets in your forked repository's settings.
+3. Fork this repository, set `GH_TOKEN` and `GIST_ID` secrets in your forked repository's settings.
 4. Wait for the first run to complete, and then you can see the result in your Gist.
 
 ## Demo
