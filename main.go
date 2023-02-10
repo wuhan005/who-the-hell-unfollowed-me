@@ -94,12 +94,14 @@ func main() {
 		gist.Files[unfollowedEventFileName] = unfollowedEventFile
 	}
 
-	// Save the followers to gist database.
-	newContent := strings.Join(currentFollowerIDs, "\n")
-	gistFollowerFile.Content = &newContent
-	gist.Files[github.GistFilename(fileName)] = *gistFollowerFile
-	_, _, err = client.Gists.Edit(ctx, gistID, gist)
-	if err != nil {
-		log.Fatal("Failed to update gist: %v", err)
+	if len(newFollowed) > 0 || len(unfollowed) > 0 {
+		// Save the followers to gist database.
+		newContent := strings.Join(currentFollowerIDs, "\n")
+		gistFollowerFile.Content = &newContent
+		gist.Files[github.GistFilename(fileName)] = *gistFollowerFile
+		_, _, err = client.Gists.Edit(ctx, gistID, gist)
+		if err != nil {
+			log.Fatal("Failed to update gist: %v", err)
+		}
 	}
 }
