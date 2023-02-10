@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v50/github"
 	"github.com/samber/lo"
@@ -88,7 +89,7 @@ func main() {
 		// Save it!
 		unfollowedEventFile := gist.Files[unfollowedEventFileName]
 		unfollowedListContent := unfollowedEventFile.GetContent()
-		unfollowedListContent = strings.Join(unfollowed, "\n") + "\n" + unfollowedListContent
+		unfollowedListContent = strings.Join(unfollowed, time.Now().Format("2006-01-02 15:04:05")+" \n") + "\n" + unfollowedListContent
 		unfollowedEventFile.Content = &unfollowedListContent
 		gist.Files[unfollowedEventFileName] = unfollowedEventFile
 	}
