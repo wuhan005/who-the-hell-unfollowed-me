@@ -61,6 +61,11 @@ func main() {
 		currentPage++
 	}
 
+	if len(currentFollowerIDs) == 0 {
+		// Something unexpected happened.
+		log.Fatal("Failed to get user's followers, empty list.")
+	}
+
 	log.Info("Total followers: %d", len(currentFollowerIDs))
 
 	// Load the gist follower database.
