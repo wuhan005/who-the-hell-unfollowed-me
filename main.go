@@ -11,6 +11,8 @@ import (
 	log "unknwon.dev/clog/v2"
 )
 
+const fileName = "github-followers.txt"
+
 func main() {
 	defer log.Stop()
 	if err := log.NewConsole(); err != nil {
@@ -75,14 +77,13 @@ func main() {
 		log.Fatal("Gist has no files.")
 	}
 
+	files := gist.GetFiles()
 	content := strings.Join(currentFollowers, "\n")
-	for fileName := range gist.Files {
-		file := gist.Files[fileName]
-		file.Content = &content
-		break
-	}
+	*files[fileName].Content = content
+	gist.Files = files
 	_, _, err = client.Gists.Edit(ctx, gistID, gist)
 	if err != nil {
 		log.Fatal("Failed to update gist: %v", err)
 	}
+	log.Info("Gist updated successfully.")
 }
