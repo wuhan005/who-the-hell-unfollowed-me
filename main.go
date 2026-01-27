@@ -51,10 +51,10 @@ func main() {
 			break
 		}
 		for _, follower := range followers {
+			followerID := follower.GetID()
 			followerName := follower.GetLogin()
-			followedDate := follower.CreatedAt.String()
 
-			currentFollowers = append(currentFollowers, fmt.Sprintf("%s (%s)", followerName, followedDate))
+			currentFollowers = append(currentFollowers, fmt.Sprintf("%s (%d)", followerName, followerID))
 		}
 		currentPage++
 	}
