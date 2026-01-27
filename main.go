@@ -2,17 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v50/github"
-	"github.com/samber/lo"
 	"golang.org/x/oauth2"
 	log "unknwon.dev/clog/v2"
 )
-
-const unfollowedEventFileName = "unfollowed.txt"
 
 func main() {
 	defer log.Stop()
@@ -27,7 +24,6 @@ func main() {
 		&oauth2.Token{AccessToken: githubToken},
 	)
 	tc := oauth2.NewClient(ctx, ts)
-
 	client := github.NewClient(tc)
 
 	// Get current user.
@@ -38,7 +34,7 @@ func main() {
 	log.Info("Current user: %s", currentUser.GetLogin())
 
 	// Get user's follower list.
-	var currentFollowerIDs []string
+	var currentFollowers []string
 	currentPage := 1
 	for {
 		log.Trace("Fetching followers, page %d", currentPage)
@@ -54,59 +50,39 @@ func main() {
 		if len(followers) == 0 {
 			break
 		}
-
 		for _, follower := range followers {
-			currentFollowerIDs = append(currentFollowerIDs, follower.GetLogin())
+			followerName := follower.GetLogin()
+			followedDate := follower.CreatedAt.String()
+
+			currentFollowers = append(currentFollowers, fmt.Sprintf("%s (%s)", followerName, followedDate))
 		}
 		currentPage++
 	}
 
-	if len(currentFollowerIDs) == 0 {
+	if len(currentFollowers) == 0 {
 		// Something unexpected happened.
 		log.Fatal("Failed to get user's followers, empty list.")
 	}
 
-	log.Info("Total followers: %d", len(currentFollowerIDs))
+	log.Info("Total followers: %d", len(currentFollowers))
 
-	// Load the gist follower database.
 	gistID := os.Getenv("GIST_ID")
 	gist, _, err := client.Gists.Get(ctx, gistID)
 	if err != nil {
 		log.Fatal("Failed to get gist: %v", err)
 	}
-	// Get the first file as the gist follower database.
-	var gistFollowerFile *github.GistFile
-	for _, file := range gist.Files {
-		gistFollowerFile = &file
+	if len(gist.Files) == 0 {
+		log.Fatal("Gist has no files.")
+	}
+
+	content := strings.Join(currentFollowers, "\n")
+	for fileName := range gist.Files {
+		file := gist.Files[fileName]
+		file.Content = &content
 		break
 	}
-	fileName := gistFollowerFile.GetFilename()
-	content := gistFollowerFile.GetContent()
-
-	previousFollowerIDs := strings.Split(content, "\n")
-	// Diff the two lists.
-	unfollowed, newFollowed := lo.Difference(previousFollowerIDs, currentFollowerIDs)
-	if len(newFollowed) > 0 {
-		log.Trace("Got %d new followers! 🎉", len(newFollowed))
-	}
-	if len(unfollowed) > 0 {
-		log.Warn("Got %d unfollowers! 😢", len(unfollowed))
-		// Save it!
-		unfollowedEventFile := gist.Files[unfollowedEventFileName]
-		unfollowedListContent := unfollowedEventFile.GetContent()
-		unfollowedListContent = strings.Join(unfollowed, time.Now().Format("2006-01-02 15:04:05")+" \n") + "\n" + unfollowedListContent
-		unfollowedEventFile.Content = &unfollowedListContent
-		gist.Files[unfollowedEventFileName] = unfollowedEventFile
-	}
-
-	if len(newFollowed) > 0 || len(unfollowed) > 0 {
-		// Save the followers to gist database.
-		newContent := strings.Join(currentFollowerIDs, "\n")
-		gistFollowerFile.Content = &newContent
-		gist.Files[github.GistFilename(fileName)] = *gistFollowerFile
-		_, _, err = client.Gists.Edit(ctx, gistID, gist)
-		if err != nil {
-			log.Fatal("Failed to update gist: %v", err)
-		}
+	_, _, err = client.Gists.Edit(ctx, gistID, gist)
+	if err != nil {
+		log.Fatal("Failed to update gist: %v", err)
 	}
 }
