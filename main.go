@@ -79,7 +79,20 @@ func main() {
 
 	files := gist.GetFiles()
 	content := strings.Join(currentFollowers, "\n")
-	*files[fileName].Content = content
+
+	// Check if content has changed before updating
+	file, exists := files[fileName]
+	if !exists {
+		log.Fatal("Gist file '%s' not found.", fileName)
+	}
+	oldContent := file.GetContent()
+	if oldContent == content {
+		log.Info("Gist content unchanged, skipping update.")
+		return
+	}
+
+	*file.Content = content
+	files[fileName] = file
 	gist.Files = files
 	_, _, err = client.Gists.Edit(ctx, gistID, gist)
 	if err != nil {
