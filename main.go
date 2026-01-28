@@ -81,7 +81,10 @@ func main() {
 	content := strings.Join(currentFollowers, "\n")
 
 	// Check if content has changed before updating
-	file := files[fileName]
+	file, exists := files[fileName]
+	if !exists {
+		log.Fatal("Gist file '%s' not found.", fileName)
+	}
 	oldContent := file.GetContent()
 	if oldContent == content {
 		log.Info("Gist content unchanged, skipping update.")
